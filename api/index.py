@@ -19,7 +19,7 @@ DATA_FILE = Path(__file__).resolve().parent.parent / "q-vercel-latency.json"
 with open(DATA_FILE, "r") as f:
     DATA = json.load(f)
 
-@app.post("/api/metrics")
+@app.post("/")
 async def get_metrics(request: Request):
     body = await request.json()
     regions = body.get("regions", [])
