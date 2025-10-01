@@ -6,7 +6,7 @@ from pathlib import Path
 
 app = FastAPI()
 
-# Enable CORS for all origins (for dashboards)
+# Enable CORS for dashboards
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load latency data at startup
+# Load data at startup
 DATA_FILE = Path(__file__).resolve().parent.parent / "q-vercel-latency.json"
 with open(DATA_FILE, "r") as f:
     DATA = json.load(f)
@@ -27,7 +27,7 @@ async def get_metrics(request: Request):
 
     results = {}
     for region in regions:
-        region_data = [d for d in DATA if d["region"] == region]
+        region_data = [d for d in DATA if d.get("region") == region]
         if not region_data:
             continue
 
