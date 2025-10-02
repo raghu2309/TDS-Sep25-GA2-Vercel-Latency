@@ -15,7 +15,11 @@ app.add_middleware(
 )
 
 # Load data at startup
-DATA_FILE = Path(__file__).resolve().parent.parent / "q-vercel-latency.json"
+import json
+from pathlib import Path
+
+# The JSON file is in the repo root, so just reference it directly
+DATA_FILE = Path("q-vercel-latency.json")
 with open(DATA_FILE, "r") as f:
     DATA = json.load(f)
 
