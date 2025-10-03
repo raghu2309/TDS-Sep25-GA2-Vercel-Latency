@@ -46,3 +46,6 @@ async def get_metrics(request: Request):
         })
 
     return result
+
+# 👇 THIS makes FastAPI work on Vercel
+handler = Mangum(app
