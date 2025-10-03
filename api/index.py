@@ -18,3 +18,6 @@ DATA_FILE = Path("q-vercel-latency.json")
 with open(DATA_FILE, "r") as f:
     DATA = json.load(f)
 
+@app.get("/message/")
+def get_message(text: str):
+    return {"response": f"You said: {text}"}
