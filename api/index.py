@@ -1,3 +1,4 @@
+
 import json
 import numpy as np
 from pathlib import Path
@@ -6,7 +7,6 @@ DATA_FILE = Path(__file__).parent.parent / "q-vercel-latency.json"
 
 
 def handler(request):
-    # ---- CORS ----
     headers = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -14,12 +14,9 @@ def handler(request):
         "Content-Type": "application/json",
     }
 
+    # CORS preflight
     if request.method == "OPTIONS":
-        return {
-            "statusCode": 200,
-            "headers": headers,
-            "body": "",
-        }
+        return {"statusCode": 200, "headers": headers, "body": ""}
 
     if request.method != "POST":
         return {
@@ -29,31 +26,29 @@ def handler(request):
         }
 
     body = request.json
-    regions = body.get("regions", [])
-    threshold = body.get("threshold_ms")
+    regions = body["regions"]
+    threshold = body["threshold_ms"]
 
-    # ---- Load data ----
     with open(DATA_FILE) as f:
-        records = json.load(f)
+        data = json.load(f)
 
-    response = {}
+    result = {}
 
     for region in regions:
-        region_records = [r for r in records if r["region"] == region]
+        records = [r for r in data if r["region"] == region]
 
-        latencies = np.array([r["latency_ms"] for r in region_records])
-        uptimes = np.array([r["uptime_pct"] for r in region_records])
+        lat = np.array([r["latency_ms"] for r in records])
+        up = np.array([r["uptime_pct"] for r in records])
 
-        response[region] = {
-            "avg_latency": float(latencies.mean()),
-            "p95_latency": float(np.percentile(latencies, 95)),
-            "avg_uptime": float(uptimes.mean()),
-            "breaches": int((latencies > threshold).sum()),
+        result[region] = {
+            "avg_latency": float(lat.mean()),
+            "p95_latency": float(np.percentile(lat, 95)),
+            "avg_uptime": float(up.mean()),
+            "breaches": int((lat > threshold).sum()),
         }
 
     return {
         "statusCode": 200,
         "headers": headers,
-        "body": json.dumps(response),
+        "body": json.dumps(result),
     }
-
