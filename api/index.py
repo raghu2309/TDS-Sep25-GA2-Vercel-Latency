@@ -1,23 +1,59 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 import json
+import numpy as np
 from pathlib import Path
 
-app = FastAPI()
+DATA_FILE = Path(__file__).parent.parent / "q-vercel-latency.json"
 
-# Enable CORS for POST requests from any origin
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["POST", "OPTIONS"],
-    allow_headers=["*"],
-)
 
-# Load JSON data from repo root
-DATA_FILE = Path("q-vercel-latency.json")
-with open(DATA_FILE, "r") as f:
-    DATA = json.load(f)
+def handler(request):
+    # ---- CORS ----
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Content-Type": "application/json",
+    }
 
-@app.get("/message/")
-def get_message(text: str):
-    return {"response": f"You said: {text}"}
+    if request.method == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": "",
+        }
+
+    if request.method != "POST":
+        return {
+            "statusCode": 405,
+            "headers": headers,
+            "body": json.dumps({"error": "POST only"}),
+        }
+
+    body = request.json
+    regions = body.get("regions", [])
+    threshold = body.get("threshold_ms")
+
+    # ---- Load data ----
+    with open(DATA_FILE) as f:
+        records = json.load(f)
+
+    response = {}
+
+    for region in regions:
+        region_records = [r for r in records if r["region"] == region]
+
+        latencies = np.array([r["latency_ms"] for r in region_records])
+        uptimes = np.array([r["uptime_pct"] for r in region_records])
+
+        response[region] = {
+            "avg_latency": float(latencies.mean()),
+            "p95_latency": float(np.percentile(latencies, 95)),
+            "avg_uptime": float(uptimes.mean()),
+            "breaches": int((latencies > threshold).sum()),
+        }
+
+    return {
+        "statusCode": 200,
+        "headers": headers,
+        "body": json.dumps(response),
+    }
+
