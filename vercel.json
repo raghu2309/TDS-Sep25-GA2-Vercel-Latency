@@ -1,5 +1,13 @@
-FROM
 {
-  "builds": [{ "src": "api/index.py", "use": "@vercel/python" }],
-  "routes": [{ "src": "/(.*)", "dest": "api/index.py" }]
+  "functions": {
+    "api/analytics.py": {
+      "runtime": "python3.11"
+    }
+  },
+  "routes": [
+    {
+      "src": "/analytics",
+      "dest": "/api/analytics"
+    }
+  ]
 }
